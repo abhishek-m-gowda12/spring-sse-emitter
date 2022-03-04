@@ -13,29 +13,28 @@ import java.util.stream.Stream;
 public class Controller {
 
     @GetMapping
-    public SseEmitter getSseEmitterResult() throws IOException, InterruptedException {
-        long sseEmitterTimeoutsInMillis = 5 * 60;
+    public SseEmitter getSseEmitterResult() {
+        long sseEmitterTimeoutsInMillis = 5 * 60L;
         SseEmitter sseEmitter = new SseEmitter(sseEmitterTimeoutsInMillis);
 
+        try {
+            Stream<SseEmitter> sseEmitterStream = IntStream.rangeClosed(1, 10)
+                    .mapToObj(value -> {
+                        try {
+                            sseEmitter.send(value);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        return sseEmitter;
+                    });
 
-        Stream aa = IntStream.rangeClosed(1, 10)
-                .mapToObj(value -> {
-                    try {
-                        sseEmitter.send(value);
-                        System.out.println(value);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    return sseEmitter;
-                });
+            sseEmitterStream.forEach(System.out::println);
 
-        System.out.println("11111");
-
-        aa.forEach(o -> {});
-
-        System.out.println("22222");
-        sseEmitter.complete();
-
+            sseEmitter.complete();
+        } catch (Exception e) {
+            e.printStackTrace();
+            sseEmitter.completeWithError(e);
+        }
 
         return sseEmitter;
     }
